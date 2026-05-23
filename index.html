@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tanam Pantau Pro v2.0 - Smart Ecosystem</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --emerald-primary: #059669; --slate-base: #f8fafc; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--slate-base); color: #1e293b; scroll-behavior: smooth; }
+        .glass-card { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 8px 32px -4px rgba(0,0,0,0.05); transition: all 0.3s ease; }
+        .glass-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px -4px rgba(0,0,0,0.08); border-color: rgba(16, 185, 129, 0.2); }
+        .nav-active { background: #10b981; color: white; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3); }
+        .view-section { display: none; }
+        .view-section.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .pulse-emerald { animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse-ring { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        
+        .bento-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+        @media (max-width: 768px) {
+            .bento-grid { grid-template-columns: 1fr; }
+            .mobile-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #f1f5f9; z-index: 50; padding: 0.75rem 1rem; justify-content: space-around; }
+        }
+    </style>
+</head>
+<body class="antialiased overflow-hidden h-screen flex flex-col md:flex-row">
+
+<div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 md:left-auto md:right-6 z-[1000] transform translate-y-[-150%] transition-all duration-500">
+    <div class="bg-slate-900 text-white shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-4 min-w-[300px]">
+        <div id="toast-icon" class="text-emerald-400">●</div>
+        <div class="flex-1 text-sm font-bold" id="toast-msg">Pesan sistem</div>
+    </div>
+</div>
+
+<div id="loadingOverlay" class="fixed inset-0 bg-slate-50/90 backdrop-blur-sm z-[9999] flex flex-col items-center justify-center hidden">
+    <div class="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+    <p class="font-bold text-slate-600 text-xs tracking-widest uppercase">Sinkronisasi Sistem...</p>
+</div>
+
+<section id="landingSection" class="fixed inset-0 z-[100] bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-emerald-50 via-white to-slate-100 flex flex-col">
+    <header class="p-8 flex justify-between items-center max-w-7xl mx-auto w-full">
+        <div class="flex items-center gap-3">
+            <!-- LOGO LANDING PAGE -->
+            <img src="logo.avif.avif" alt="Logo Tanam Pantau" class="w-10 h-10 object-contain rounded-xl shadow-sm" onerror="this.onerror=null; this.src='https://placehold.co/100x100?text=🌱';">
+            <span class="text-xl font-extrabold tracking-tighter">TANAM<span class="text-emerald-600">PANTAU</span></span>
+        </div>
+        <button onclick="toggleModal('loginModal', true)" class="text-sm font-bold text-slate-800 hover:text-emerald-600">Access Console</button>
+    </header>
+
+    <div class="flex-1 flex items-center justify-center px-6 text-center">
+        <div class="max-w-4xl space-y-8">
+            <span class="inline-block px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-xs font-black uppercase tracking-widest">Version 2.0 Pro</span>
+            <h1 class="text-6xl md:text-8xl font-black text-slate-900 leading-tight">Pertanian Cerdas <br><span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">Tanpa Batas.</span></h1>
+            <p class="text-xl text-slate-500 max-w-2xl mx-auto font-medium">Monitoring IoT real-time untuk kesehatan tanaman maksimal.</p>
+            <div class="pt-8">
+                <button onclick="toggleModal('loginModal', true)" class="bg-slate-900 text-white px-10 py-5 rounded-[2rem] font-bold text-lg hover:scale-105 transition-transform shadow-2xl">Masuk ke Dashboard</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<aside id="sidebar" class="hidden md:flex w-72 bg-white border-r border-slate-100 flex-col h-full z-40">
+    <div class="p-8">
+        <div class="flex items-center gap-3 mb-12">
+            <!-- LOGO SIDEBAR DASHBOARD -->
+            <img src="logo.avif.avif" alt="Logo Tanam Pantau" class="w-10 h-10 object-contain rounded-xl shadow-sm" onerror="this.onerror=null; this.src='https://placehold.co/100x100?text=🌱';">
+            <span class="font-black text-xl tracking-tighter">TANAM<span class="text-emerald-600">PANTAU</span></span>
+        </div>
+        <nav class="space-y-2">
+            <button onclick="switchView('home')" id="nav-home" class="nav-active w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-bold text-sm transition-all group">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" /></svg>
+                Ringkasan
+            </button>
+            <button onclick="switchView('plants')" id="nav-plants" class="w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-bold text-sm text-slate-400 hover:bg-slate-50 transition-all">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+                Inventory
+            </button>
+            <button onclick="switchView('settings')" id="nav-settings" class="w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-bold text-sm text-slate-400 hover:bg-slate-50 transition-all">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                Settings
+            </button>
+            <button onclick="switchView('logs')" id="nav-logs" class="w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-bold text-sm text-slate-400 hover:bg-slate-50 transition-all">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                History Logs
+            </button>
+        </nav>
+    </div>
+    <div class="mt-auto p-6 border-t border-slate-50">
+        <div class="bg-slate-50 rounded-2xl p-4 flex items-center gap-3">
+            <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm" id="avatarChar">?</div>
+            <div class="flex-1 overflow-hidden">
+                <p id="userNameDisplay" class="text-xs font-black text-slate-800 truncate">User</p>
+                <button onclick="handleLogout()" class="text-[10px] font-bold text-red-500 uppercase tracking-tighter">Sign Out</button>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<main class="flex-1 flex flex-col overflow-hidden relative">
+    <div class="h-20 bg-white/50 backdrop-blur-md flex items-center justify-between px-10 shrink-0 border-b border-slate-100">
+        <div class="flex flex-col">
+            <h2 id="view-title" class="font-black text-xl text-slate-900">Overview Dashboard</h2>
+            <p id="current-date" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Memuat...</p>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <!-- INDIKATOR STATUS DATABASE MYSQL -->
+            <div id="db-status-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-700">
+                <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                Mengecek DB...
+            </div>
+            
+            <div id="digital-clock" class="text-sm font-black text-slate-800 bg-white px-4 py-2 rounded-xl border border-slate-100 shadow-sm">00:00:00</div>
+        </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar space-y-10 pb-24 md:pb-10">
+        <!-- Home Section -->
+        <section id="view-home" class="view-section active">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
+                <div class="flex items-center gap-4 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
+                    <button onclick="toggleAutoMode()" id="autoModeBtn" class="px-6 py-3 rounded-xl font-bold text-sm transition-all bg-slate-100 text-slate-500">MODE MANUAL</button>
+                    <button onclick="togglePump()" id="pumpBtn" class="px-6 py-3 rounded-xl font-bold text-sm bg-emerald-600 text-white shadow-lg shadow-emerald-200">💧 SIRAM SEKARANG</button>
+                </div>
+                <div class="flex flex-col text-right">
+                    <span class="text-[10px] font-black text-slate-400 uppercase">Local Weather</span>
+                    <div class="flex items-center gap-2 justify-end">
+                        <span id="weather-temp" class="font-black text-slate-800">28°C</span>
+                        <span id="weather-icon" class="text-xl">☀️</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                <div class="glass-card p-6 rounded-[2rem] bg-gradient-to-br from-white to-emerald-50/30">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center">💧</div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Soil Moisture</p>
+                    </div>
+                    <h3 class="text-4xl font-black text-slate-800" id="stat-moisture">0%</h3>
+                    <p class="text-[10px] text-emerald-500 font-bold mt-2">Optimal range: 60-80%</p>
+                </div>
+                <div class="glass-card p-6 rounded-[2rem] bg-gradient-to-br from-white to-blue-50/30">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">🌡️</div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Temperature</p>
+                    </div>
+                    <h3 class="text-4xl font-black text-slate-800" id="stat-temp">28°C</h3>
+                    <p class="text-[10px] text-blue-500 font-bold mt-2">Ambient: Stable</p>
+                </div>
+                <div class="glass-card p-6 rounded-[2rem] bg-gradient-to-br from-white to-orange-50/30">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-8 h-8 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center">📦</div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Water Level</p>
+                    </div>
+                    <h3 class="text-4xl font-black text-slate-800" id="stat-tank">0%</h3>
+                    <button onclick="refillWater()" class="mt-4 text-[10px] font-black text-orange-600 uppercase hover:underline">Refill Tank</button>
+                </div>
+                <div class="glass-card p-6 rounded-[2rem] bg-gradient-to-br from-white to-purple-50/30">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-8 h-8 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center">✨</div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Health Index</p>
+                    </div>
+                    <h3 class="text-4xl font-black text-slate-800" id="stat-health">0%</h3>
+                    <p class="text-[10px] text-purple-500 font-bold mt-2">Ecosystem Score</p>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm relative overflow-hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h4 class="font-black text-slate-800">Real-time Analytics</h4>
+                    <div class="flex gap-2">
+                        <span class="flex items-center gap-1 text-[10px] font-bold text-emerald-600"><span class="w-2 h-2 rounded-full bg-emerald-600"></span> Moisture</span>
+                        <span class="flex items-center gap-1 text-[10px] font-bold text-blue-600"><span class="w-2 h-2 rounded-full bg-blue-600"></span> Temp</span>
+                    </div>
+                </div>
+                <div class="h-[350px]"><canvas id="mainChart"></canvas></div>
+            </div>
+        </section>
+
+        <!-- Settings -->
+        <section id="view-settings" class="view-section">
+            <div class="mb-10">
+                <h1 class="text-3xl font-black text-slate-900">System Settings</h1>
+                <p class="text-sm text-slate-400 font-medium">Konfigurasi otomatisasi dan preferensi sistem.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-10 rounded-[3rem] border border-slate-100">
+                    <h4 class="font-black text-lg mb-6">Automation Thresholds</h4>
+                    <div class="space-y-6">
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <label class="text-xs font-black text-slate-500 uppercase">Min Moisture (%)</label>
+                                <span id="val-minMoisture" class="text-xs font-black text-emerald-600">40%</span>
+                            </div>
+                            <input type="range" id="set-minMoisture" min="10" max="60" value="40" class="w-full accent-emerald-600" oninput="updateSettingsVal('minMoisture')">
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <label class="text-xs font-black text-slate-500 uppercase">Max Moisture (%)</label>
+                                <span id="val-maxMoisture" class="text-xs font-black text-emerald-600">80%</span>
+                            </div>
+                            <input type="range" id="set-maxMoisture" min="70" max="95" value="80" class="w-full accent-emerald-600" oninput="updateSettingsVal('maxMoisture')">
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-10 rounded-[3rem] border border-slate-100">
+                    <h4 class="font-black text-lg mb-6">System Notification</h4>
+                    <div class="space-y-4">
+                        <label class="flex items-center gap-4 cursor-pointer p-4 bg-slate-50 rounded-2xl">
+                            <input type="checkbox" checked class="w-5 h-5 accent-emerald-600">
+                            <span class="text-sm font-bold text-slate-700">Email Alerts on Low Water</span>
+                        </label>
+                        <label class="flex items-center gap-4 cursor-pointer p-4 bg-slate-50 rounded-2xl">
+                            <input type="checkbox" checked class="w-5 h-5 accent-emerald-600">
+                            <span class="text-sm font-bold text-slate-700">Daily Health Report</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Inventory -->
+        <section id="view-plants" class="view-section">
+            <div class="flex justify-between items-center mb-10">
+                <h1 class="text-3xl font-black text-slate-900">Inventory</h1>
+                <button onclick="toggleModal('addPlantModal', true)" class="bg-emerald-600 text-white px-8 py-4 rounded-2xl font-black text-sm"> + TAMBAH </button>
+            </div>
+            <div id="plantGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <!-- Logs -->
+        <section id="view-logs" class="view-section">
+            <div class="flex justify-between items-center mb-10">
+                <h1 class="text-3xl font-black text-slate-900">Activity Log</h1>
+                <button onclick="clearLogs()" class="text-xs font-black text-red-500 uppercase bg-red-50 px-4 py-2 rounded-xl">Clear</button>
+            </div>
+            <div class="bg-white rounded-[2rem] border border-slate-100 overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 text-[10px] font-black text-slate-400 uppercase">
+                        <tr><th class="px-8 py-5">Time</th><th class="px-8 py-5">Category</th><th class="px-8 py-5">Description</th></tr>
+                    </thead>
+                    <tbody id="logTableBody" class="divide-y divide-slate-50"></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</main>
+
+<div id="loginModal" class="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-950/40 backdrop-blur-md hidden">
+    <div class="bg-white w-full max-w-md rounded-[3rem] p-10 shadow-2xl">
+        <h3 class="text-3xl font-black text-slate-900 text-center mb-8">Login</h3>
+        <form onsubmit="handleLogin(event)" class="space-y-4">
+            <input type="text" id="loginUser" required placeholder="Username" class="w-full bg-slate-50 p-5 rounded-2xl font-bold outline-none border border-slate-100">
+            <input type="password" required placeholder="Password" class="w-full bg-slate-50 p-5 rounded-2xl font-bold outline-none border border-slate-100">
+            <button type="submit" class="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black text-lg">LOGIN</button>
+        </form>
+    </div>
+</div>
+
+<div id="addPlantModal" class="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-950/40 backdrop-blur-md hidden">
+    <div class="bg-white w-full max-w-lg rounded-[3rem] p-10">
+        <h3 class="text-2xl font-black mb-6">Tambah Tanaman</h3>
+        <form onsubmit="handleAddPlant(event)" class="space-y-4">
+            <input type="text" id="pName" required placeholder="Nama Tanaman" class="w-full bg-slate-50 p-4 rounded-xl font-bold outline-none border border-slate-100">
+            <select id="pType" class="w-full bg-slate-50 p-4 rounded-xl font-bold outline-none border border-slate-100">
+                <option>Hias</option><option>Sayur</option><option>Buah</option>
+            </select>
+            <div class="flex gap-4">
+                <button type="submit" class="flex-1 bg-emerald-600 text-white py-4 rounded-xl font-black">SIMPAN</button>
+                <button type="button" onclick="toggleModal('addPlantModal', false)" class="px-8 py-4 rounded-xl bg-slate-100 font-bold">BATAL</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const state = {
+    user: null,
+    isAuth: false,
+    view: 'home',
+    isAuto: false,
+    isPumpOn: false,
+    moisture: 65,
+    tank: 80,
+    health: 95,
+    temp: 28,
+    humidity: 45,
+    weather: 'Cerah',
+    logs: [],
+    settings: {
+        minMoisture: 40,
+        maxMoisture: 80
+    },
+    plants: [], 
+    chart: null,
+    chartData: Array(15).fill(65),
+    chartTempData: Array(15).fill(28)
+};
+
+// Pengaman URL dinamis jika diakses melalui lingkungan Blob / Peninjau
+function getSafeUrl(endpoint) {
+    try {
+        if (window.location.protocol === 'blob:' || window.location.href.startsWith('blob:') || window.location.protocol === 'file:') {
+            return `http://localhost/tanam-pantau/${endpoint}`;
+        }
+        return endpoint;
+    } catch (e) {
+        return `http://localhost/tanam-pantau/${endpoint}`;
+    }
+}
+
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-msg').innerText = msg;
+    toast.style.transform = "translateY(0)";
+    setTimeout(() => toast.style.transform = "translateY(-150%)", 3000);
+}
+
+function toggleModal(id, show) {
+    const modal = document.getElementById(id);
+    if (show) modal.classList.remove('hidden');
+    else modal.classList.add('hidden');
+}
+
+function switchView(viewName) {
+    const views = ['home', 'plants', 'settings', 'logs'];
+    views.forEach(v => {
+        const viewEl = document.getElementById('view-' + v);
+        if (viewEl) viewEl.classList.remove('active');
+        
+        const navBtn = document.getElementById('nav-' + v);
+        if (navBtn) navBtn.classList.remove('nav-active');
+    });
+
+    const targetView = document.getElementById('view-' + viewName);
+    if (targetView) targetView.classList.add('active');
+    
+    const activeNav = document.getElementById('nav-' + viewName);
+    if (activeNav) activeNav.classList.add('nav-active');
+    
+    state.view = viewName;
+    document.getElementById('view-title').innerText = viewName.charAt(0).toUpperCase() + viewName.slice(1) + (viewName === 'home' ? ' Overview' : '');
+    
+    if (viewName === 'plants') renderPlants();
+}
+
+function handleLogin(e) {
+    e.preventDefault();
+    const user = document.getElementById('loginUser').value;
+    document.getElementById('loadingOverlay').classList.remove('hidden');
+    
+    setTimeout(() => {
+        state.user = user;
+        state.isAuth = true;
+        document.getElementById('landingSection').classList.add('hidden');
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        toggleModal('loginModal', false);
+        document.getElementById('userNameDisplay').innerText = user;
+        document.getElementById('avatarChar').innerText = user.charAt(0).toUpperCase();
+        showToast(`Selamat datang, ${user}!`);
+        initDashboard();
+        
+        fetchPlantsFromMySQL(); 
+    }, 1500);
+}
+
+async function fetchPlantsFromMySQL() {
+    const dbBadge = document.getElementById('db-status-badge');
+    try {
+        const url = getSafeUrl('get_plants.php');
+        const response = await fetch(url); 
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        state.plants = data.map(dbPlant => ({
+            id: dbPlant.id,
+            name: dbPlant.name,
+            type: dbPlant.type,
+            health: parseFloat(dbPlant.health),
+            color: dbPlant.color || 'bg-emerald-500' 
+        }));
+        
+        renderPlants();
+        
+        // Perbarui lencana status jika berhasil terhubung ke MySQL
+        if (dbBadge) {
+            dbBadge.className = "flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700";
+            dbBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> MySQL Terhubung`;
+        }
+        addLog("Data tanaman berhasil disinkronkan dengan MySQL", "System");
+    } catch (err) {
+        console.warn("Gagal terhubung ke MySQL, masuk ke Mode Offline (Demo)", err);
+        state.plants = [
+            { id: 1, name: 'Bayam Merah', type: 'Sayur', health: 90, color: 'bg-emerald-500' },
+            { id: 2, name: 'Anggrek Bulan', type: 'Hias', health: 95, color: 'bg-indigo-500' },
+            { id: 3, name: 'Tomat Cherry', type: 'Buah', health: 85, color: 'bg-orange-500' }
+        ];
+        renderPlants();
+        
+        // Perbarui lencana status jika gagal terhubung (Menggunakan Mode Demo)
+        if (dbBadge) {
+            dbBadge.className = "flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-700";
+            dbBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500"></span> Mode Offline (Demo)`;
+        }
+        showToast("Mode Offline: Menggunakan data simulasi lokal.");
+        addLog("Mengaktifkan database lokal (Mode Offline)", "Warning");
+    }
+}
+
+function handleLogout() {
+    state.isAuth = false;
+    document.getElementById('landingSection').classList.remove('hidden');
+    showToast("Berhasil keluar.");
+}
+
+function renderPlants() {
+    const grid = document.getElementById('plantGrid');
+    if (!grid) return;
+    
+    if (state.plants.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400 font-bold">Belum ada tanaman di inventory.</div>`;
+        return;
+    }
+
+    grid.innerHTML = state.plants.map(p => `
+        <div class="glass-card p-6 rounded-[2.5rem] relative overflow-hidden group">
+            <div class="flex justify-between items-start mb-4">
+                <div class="w-12 h-12 ${p.color} rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-inner">🌱</div>
+                <button onclick="removePlant(${p.id})" class="text-slate-300 hover:text-red-500 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
+            </div>
+            <h5 class="font-black text-slate-800 text-lg">${p.name}</h5>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">${p.type}</p>
+            <div class="space-y-2">
+                <div class="flex justify-between text-[10px] font-black uppercase">
+                    <span>Health</span>
+                    <span class="${p.health < 40 ? 'text-red-500' : 'text-emerald-500'}">${Math.round(p.health)}%</span>
+                </div>
+                <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full ${p.health < 40 ? 'bg-red-500' : 'bg-emerald-500'} transition-all duration-1000" style="width: ${p.health}%"></div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function handleAddPlant(e) {
+    e.preventDefault();
+    const name = document.getElementById('pName').value;
+    const type = document.getElementById('pType').value;
+    
+    document.getElementById('loadingOverlay').classList.remove('hidden'); 
+    
+    try {
+        const url = getSafeUrl('add_plant.php');
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name, type: type })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(`${name} berhasil ditambahkan ke Database!`);
+            addLog(`Menambahkan tanaman baru: ${name}`, 'Inventory');
+            await fetchPlantsFromMySQL();
+        } else {
+            throw new Error(result.message || "Gagal simpan ke DB");
+        }
+    } catch (err) {
+        console.warn("MySQL Offline - Menambahkan tanaman secara lokal (Mode Offline)");
+        const newId = Date.now();
+        const colors = ['bg-emerald-500', 'bg-blue-500', 'bg-orange-500', 'bg-purple-500', 'bg-rose-500'];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        
+        state.plants.push({
+            id: newId,
+            name: name,
+            type: type,
+            health: 100,
+            color: randomColor
+        });
+        renderPlants();
+        showToast(`${name} berhasil ditambahkan ke memori lokal.`);
+        addLog(`Menambahkan tanaman lokal: ${name}`, 'Inventory');
+    } finally {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        toggleModal('addPlantModal', false);
+        document.getElementById('pName').value = '';
+    }
+}
+
+async function syncHealthToMySQL() {
+    if (state.plants.length === 0) return;
+    try {
+        const url = getSafeUrl('update_health.php');
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plants: state.plants })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP Error: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        if (result.success) {
+            console.log("Auto-Save: Kesehatan tanaman berhasil disinkronkan ke MySQL.");
+        } else {
+            console.error("Auto-Save Gagal:", result.message);
+        }
+    } catch (err) {
+        console.log("Auto-Save: MySQL offline, kesehatan disimpan sementara di lokal.");
+    }
+}
+
+function removePlant(id) {
+    state.plants = state.plants.filter(p => p.id !== id);
+    renderPlants();
+    addLog(`Menghapus tanaman dari koleksi`, 'Inventory');
+    showToast(`Tanaman berhasil dihapus.`);
+}
+
+function togglePump() {
+    if (state.tank <= 0 && !state.isPumpOn) {
+        showToast("Air tangki habis! Harap isi ulang.");
+        return;
+    }
+    state.isPumpOn = !state.isPumpOn;
+    const btn = document.getElementById('pumpBtn');
+    if (state.isPumpOn) {
+        btn.innerText = "🛑 MATIKAN POMPA";
+        btn.classList.replace('bg-emerald-600', 'bg-red-600');
+        addLog("Pompa diaktifkan manual", "Hardware");
+    } else {
+        btn.innerText = "💧 SIRAM SEKARANG";
+        btn.classList.replace('bg-red-600', 'bg-emerald-600');
+        addLog("Pompa dimatikan manual", "Hardware");
+        syncHealthToMySQL();
+    }
+}
+
+function toggleAutoMode() {
+    state.isAuto = !state.isAuto;
+    const btn = document.getElementById('autoModeBtn');
+    btn.innerText = state.isAuto ? "MODE OTOMATIS" : "MODE MANUAL";
+    btn.className = state.isAuto 
+        ? "px-6 py-3 rounded-xl font-bold text-sm transition-all bg-emerald-100 text-emerald-700" 
+        : "px-6 py-3 rounded-xl font-bold text-sm transition-all bg-slate-100 text-slate-500";
+    addLog(`Beralih ke mode ${state.isAuto ? 'Otomatis' : 'Manual'}`, "System");
+}
+
+function refillWater() {
+    state.tank = 100;
+    addLog("Tangki air diisi ulang", "Maintenance");
+    showToast("Tangki penuh kembali!");
+}
+
+function updateSettingsVal(key) {
+    const val = document.getElementById('set-' + key).value;
+    state.settings[key] = parseInt(val);
+    document.getElementById('val-' + key).innerText = val + '%';
+    addLog(`Threshold ${key} diatur ke ${val}%`, 'Settings');
+}
+
+function addLog(msg, cat) {
+    const log = { time: new Date().toLocaleTimeString(), cat, msg };
+    state.logs.unshift(log);
+    if (state.logs.length > 20) state.logs.pop();
+    
+    const row = `<tr>
+        <td class="px-8 py-4 text-[11px] font-bold text-slate-400">${log.time}</td>
+        <td class="px-8 py-4"><span class="px-2 py-1 rounded-md bg-slate-100 text-[9px] font-black text-slate-500 uppercase">${log.cat}</span></td>
+        <td class="px-8 py-4 text-xs font-medium text-slate-600">${log.msg}</td>
+    </tr>`;
+    
+    const table = document.getElementById('logTableBody');
+    if (table) table.insertAdjacentHTML('afterbegin', row);
+}
+
+function clearLogs() {
+    state.logs = [];
+    document.getElementById('logTableBody').innerHTML = '';
+}
+
+function initDashboard() {
+    document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    
+    state.chart = new Chart(ctx, {
+        type: 'line',
+        data: { 
+            labels: Array(15).fill(''), 
+            datasets: [
+                { 
+                    label: 'Moisture',
+                    data: state.chartData, 
+                    borderColor: '#10b981', 
+                    borderWidth: 4,
+                    tension: 0.4, 
+                    fill: true, 
+                    backgroundColor: 'rgba(16, 185, 129, 0.05)', 
+                    pointRadius: 0 
+                },
+                { 
+                    label: 'Temp',
+                    data: state.chartTempData, 
+                    borderColor: '#3b82f6', 
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    tension: 0.4, 
+                    fill: false, 
+                    pointRadius: 0 
+                }
+            ] 
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { legend: { display: false } }, 
+            scales: { 
+                y: { min: 0, max: 100, border: { display: false }, grid: { color: '#f1f5f9' } }, 
+                x: { display: false } 
+            }
+        }
+    });
+
+    let secondsCounter = 0;
+
+    setInterval(() => {
+        if (!state.isAuth) return;
+        document.getElementById('digital-clock').innerText = new Date().toLocaleTimeString();
+
+        // 1% per 2 menit = 1% / 120 detik = 0.0083% per detik
+        const healthDecay = 1 / 120; 
+        const healthRecovery = 0.2; 
+
+        state.plants.forEach(p => {
+            if (state.isPumpOn && state.tank > 0) {
+                p.health = Math.min(100, p.health + healthRecovery);
+            } else {
+                p.health = Math.max(0, p.health - healthDecay);
+            }
+        });
+
+        // Trigger Auto-Save / Sinkronisasi ke MySQL setiap 10 detik
+        secondsCounter++;
+        if (secondsCounter >= 10) {
+            syncHealthToMySQL();
+            secondsCounter = 0; // Reset counter
+        }
+
+        if (state.isAuto) {
+            if (state.moisture < state.settings.minMoisture && !state.isPumpOn) togglePump();
+            if (state.moisture > state.settings.maxMoisture && state.isPumpOn) togglePump();
+        }
+
+        if (state.isPumpOn && state.tank > 0) {
+            state.moisture = Math.min(100, state.moisture + 1.5);
+            state.tank = Math.max(0, state.tank - 0.4);
+            if (state.tank <= 0) {
+                state.isPumpOn = false;
+                togglePump();
+                showToast("Tangki habis!");
+            }
+        } else {
+            state.moisture = Math.max(10, state.moisture - 0.1);
+        }
+        
+        state.temp = 27 + Math.random() * 2;
+        state.humidity = 40 + Math.random() * 10;
+
+        document.getElementById('stat-moisture').innerText = `${Math.round(state.moisture)}%`;
+        document.getElementById('stat-temp').innerText = `${Math.round(state.temp)}°C`;
+        document.getElementById('stat-tank').innerText = `${Math.round(state.tank)}%`;
+        
+        const avgHealth = state.plants.length > 0 
+            ? state.plants.reduce((sum, plant) => sum + plant.health, 0) / state.plants.length 
+            : 0; 
+        
+        document.getElementById('stat-health').innerText = `${Math.round(avgHealth)}%`;
+
+        if (state.view === 'plants') {
+             renderPlants();
+        }
+
+        state.chartData.push(state.moisture);
+        state.chartData.shift();
+        state.chartTempData.push(state.temp * 2.5);
+        state.chartTempData.shift();
+        state.chart.update('none');
+    }, 1000);
+}
+</script>
+</body>
+</html>
